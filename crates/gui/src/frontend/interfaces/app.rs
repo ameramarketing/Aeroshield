@@ -126,7 +126,7 @@ fn build_window(app: &Application) -> ApplicationWindow {
     let window = ApplicationWindow::builder()
         .application(app)
         .title("")
-        .default_width(1100)
+        .default_width(1200)
         .default_height(520)
         .build();
 
@@ -211,7 +211,7 @@ fn build_aps_view() -> TreeView {
 
 fn build_aps_scroll() -> ScrolledWindow {
     let aps_scroll = ScrolledWindow::new();
-    aps_scroll.set_policy(PolicyType::Never, PolicyType::Automatic);
+    aps_scroll.set_policy(PolicyType::Automatic, PolicyType::Automatic);
     aps_scroll.set_height_request(140);
 
     aps_scroll
@@ -289,7 +289,7 @@ fn build_cli_view() -> TreeView {
 
 fn build_cli_scroll() -> ScrolledWindow {
     let aps_scroll = ScrolledWindow::new();
-    aps_scroll.set_policy(PolicyType::Never, PolicyType::Automatic);
+    aps_scroll.set_policy(PolicyType::Automatic, PolicyType::Automatic);
 
     aps_scroll
 }
@@ -515,7 +515,7 @@ impl AppGui {
 
         let main_paned = Paned::new(Orientation::Horizontal);
         main_paned.set_wide_handle(true);
-        main_paned.set_position(740);
+        main_paned.set_position(840);
         main_paned.set_hexpand(true);
         main_paned.set_vexpand(true);
         main_paned.set_start_child(Some(&panned_cli_aps));
