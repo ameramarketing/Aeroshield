@@ -126,11 +126,11 @@ fn build_window(app: &Application) -> ApplicationWindow {
     let window = ApplicationWindow::builder()
         .application(app)
         .title("")
-        .default_width(1240)
-        .default_height(620)
+        .default_width(1100)
+        .default_height(520)
         .build();
 
-    window.set_size_request(500, 500);
+    window.set_size_request(500, 450);
     window.connect_close_request(|_| {
         backend::app_cleanup();
         glib::Propagation::Proceed
@@ -488,6 +488,7 @@ impl AppGui {
 
         let panned_cli_aps = Paned::new(Orientation::Vertical);
         panned_cli_aps.set_wide_handle(true);
+        panned_cli_aps.set_position(220);
         panned_cli_aps.set_start_child(Some(&aps_scroll));
         panned_cli_aps.set_end_child(Some(&cli_scroll));
 
@@ -512,6 +513,7 @@ impl AppGui {
 
         let main_paned = Paned::new(Orientation::Horizontal);
         main_paned.set_wide_handle(true);
+        main_paned.set_position(740);
         main_paned.set_start_child(Some(&panned_cli_aps));
 
         // Construct sidebar stack and widgets
