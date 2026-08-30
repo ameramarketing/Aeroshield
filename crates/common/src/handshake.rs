@@ -15,6 +15,7 @@
 
 use std::collections::{HashMap, HashSet};
 use std::path::Path;
+use serde::{Serialize, Deserialize};
 
 use libwifi::Addresses;
 use libwifi::Frame;
@@ -24,9 +25,15 @@ use libwifi::frame::components::{DataHeader, ManagementHeader, StationInfo};
 const LINKTYPE_IEEE802_11: u32 = 105;
 const LINKTYPE_IEEE802_11_RADIOTAP: u32 = 127;
 
-/// Return `(bssid, essid)` for every AP that has a captured WPA 4-way handshake in
-/// the given capture file(s). Unreadable or unparsable files are skipped.
-pub fn get_handshakes<I, S>(paths: I) -> std::io::Result<Vec<(String, String)>>
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct HandshakeResults {
+    pub handshakes: Vec<(String, String)>,
+    pub pmkids: Vec<(String, String)>,
+}
+
+/// Return HandshakeResults separating captured WPA 4-way handshakes and PMKIDs
+/// in the given capture file(s). Unreadable or unparsable files are skipped.
+pub fn get_handshakes<I, S>(paths: I) -> std::io::Result<HandshakeResults>
 where
     I: IntoIterator<Item = S>,
     S: AsRef<Path>,
@@ -44,31 +51,38 @@ where
 
     // A crackable 4-way handshake needs M2 — the only carrier of the SNonce, plus a
     // MIC — together with an ANonce source (M1 or M3).
-    let mut bssids: HashSet<String> = HashSet::new();
+    let mut hs_bssids: HashSet<String> = HashSet::new();
     for ((bssid, _station), seen) in &messages {
         let m1 = seen & 0b0001 != 0;
         let m2 = seen & 0b0010 != 0;
         let m3 = seen & 0b0100 != 0;
         if m2 && (m1 || m3) {
-            bssids.insert(bssid.clone());
+            hs_bssids.insert(bssid.clone());
         }
     }
 
-    // PMKIDs are also fully crackable targets!
-    for bssid in pmkids {
-        bssids.insert(bssid);
+    let mut handshakes = Vec::new();
+    for bssid in hs_bssids {
+        let essid = essids
+            .get(&bssid)
+            .cloned()
+            .unwrap_or_else(|| "hidden".to_string());
+        handshakes.push((bssid, essid));
     }
 
-    Ok(bssids
-        .into_iter()
-        .map(|bssid| {
-            let essid = essids
-                .get(&bssid)
-                .cloned()
-                .unwrap_or_else(|| "hidden".to_string());
-            (bssid, essid)
-        })
-        .collect())
+    let mut pmkids_res = Vec::new();
+    for bssid in pmkids {
+        let essid = essids
+            .get(&bssid)
+            .cloned()
+            .unwrap_or_else(|| "hidden".to_string());
+        pmkids_res.push((bssid, essid));
+    }
+
+    Ok(HandshakeResults {
+        handshakes,
+        pmkids: pmkids_res,
+    })
 }
 
 /// Walk a single capture's frames, accumulating ESSIDs and handshake messages.

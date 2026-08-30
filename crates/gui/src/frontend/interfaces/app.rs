@@ -344,6 +344,7 @@ pub struct AppGui {
     pub signal_graph: SignalGraph,
     pub wps_tab: WpsTab,
     pub evil_twin_tab: EvilTwinTab,
+    pub session_tab: SessionTab,
     pub sidebar_stack: Stack,
 }
 
@@ -513,10 +514,12 @@ impl AppGui {
 
         // Construct sidebar stack and widgets
         let sidebar_stack = Stack::new();
+        let session_tab = SessionTab::new();
         let signal_graph = SignalGraph::new();
         let wps_tab = WpsTab::new();
         let evil_twin_tab = EvilTwinTab::new();
 
+        sidebar_stack.add_titled(&session_tab.container, Some("session"), "Session");
         sidebar_stack.add_titled(&signal_graph.handle, Some("graph"), "Graph");
         sidebar_stack.add_titled(&wps_tab.container, Some("wps"), "WPS");
         sidebar_stack.add_titled(&evil_twin_tab.container, Some("evil_twin"), "Evil Twin");
@@ -575,6 +578,7 @@ impl AppGui {
             signal_graph,
             wps_tab,
             evil_twin_tab,
+            session_tab,
             sidebar_stack,
         }
     }

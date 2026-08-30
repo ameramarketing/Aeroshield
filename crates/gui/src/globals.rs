@@ -1,4 +1,4 @@
-use aeroshield_common::types::{AP, AttackState, Client, Settings};
+use aeroshield_common::types::{AP, AttackState, Client, Settings, AuditSession};
 
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -37,6 +37,7 @@ lazy_static! {
 
     pub static ref SETTINGS: Mutex<Settings> = Mutex::new(Settings::default());
     pub static ref NEW_VERSION: Mutex<Option<String>> = Mutex::new(None);
+    pub static ref CURRENT_SESSION: Mutex<AuditSession> = Mutex::new(AuditSession::default());
 }
 
 /// Whether the channel controls are currently locked because at least one deauth attack is running.

@@ -134,6 +134,11 @@ fn connect_attack_but(app_data: Rc<AppData>) {
                 );
             };
 
+            crate::frontend::connections::app::log_timeline_event(
+                "Deauth",
+                &format!("Launched deauth attack against target BSSID {}.", bssid)
+            );
+
             app_data.deauth_gui.window.hide();
         }
     ));

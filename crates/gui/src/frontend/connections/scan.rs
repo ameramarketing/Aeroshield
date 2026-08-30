@@ -40,6 +40,16 @@ fn run_scan(app_data: &AppData) {
         return ErrorDialog::spawn(&app_data.app_gui.window, "Error", e.to_string().as_str());
     }
 
+    // Update session scope and lifecycle state
+    {
+        let mut session = crate::globals::CURRENT_SESSION.lock().unwrap();
+        session.scope.interface = iface.clone();
+        if session.status == aeroshield_common::types::SessionStatus::New {
+            session.status = aeroshield_common::types::SessionStatus::Active;
+        }
+    }
+    crate::frontend::connections::app::log_timeline_event("Scan", &format!("Scan started on interface {}.", iface));
+
     app_data
         .app_gui
         .scan_but
@@ -53,6 +63,7 @@ fn connect_scan_button(app_data: Rc<AppData>) {
         move |this| match backend::is_scan_process() {
             true => {
                 backend::stop_scan_process().ok();
+                crate::frontend::connections::app::log_timeline_event("Scan", "Scan paused.");
                 this.set_icon_name("media-playback-start-symbolic");
             }
             false => {
@@ -72,6 +83,23 @@ fn connect_restart_button(app_data: Rc<AppData>) {
 
             app_data.app_gui.aps_model.clear();
             app_data.app_gui.cli_model.clear();
+
+            // Reset current security assessment session
+            {
+                let mut session = crate::globals::CURRENT_SESSION.lock().unwrap();
+                let prev_notes = session.scope.operator_notes.clone();
+                let prev_env = session.scope.environment.clone();
+                let prev_bssids = session.scope.target_bssids.clone();
+                let prev_ssids = session.scope.target_ssids.clone();
+                *session = aeroshield_common::types::AuditSession::default();
+                session.scope.interface = backend::get_iface().unwrap_or_else(|| "None".to_string());
+                session.scope.operator_notes = prev_notes;
+                session.scope.environment = prev_env;
+                session.scope.target_bssids = prev_bssids;
+                session.scope.target_ssids = prev_ssids;
+                session.status = aeroshield_common::types::SessionStatus::Active;
+            }
+            crate::frontend::connections::app::log_timeline_event("Lifecycle", "Session data reset. New audit session started.");
 
             run_scan(&app_data);
         }

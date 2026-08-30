@@ -53,6 +53,7 @@ pub struct AP {
     pub privacy: String,
     pub hidden: bool,
     pub handshake: bool,
+    pub pmkid: bool,
     /// Path of a capture file the *GUI* saved this handshake to. This is GUI-side
     /// overlay state: the agent always leaves it `None` and the GUI fills it in
     /// from its own bookkeeping before display.
@@ -101,4 +102,146 @@ impl Settings {
             mac => MacMode::Specific(mac.to_string()),
         }
     }
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AuditSession {
+    pub id: String,
+    pub name: String,
+    pub status: SessionStatus,
+    pub metadata: SessionMetadata,
+    pub scope: AssessmentScope,
+    pub observations: SessionObservations,
+    pub evidence: Vec<SessionEvidence>,
+    pub findings: Vec<Finding>,
+    pub timeline: Vec<TimelineEvent>,
+}
+
+impl Default for AuditSession {
+    fn default() -> Self {
+        Self {
+            id: uuid_v4_placeholder(),
+            name: "New Security Assessment".to_string(),
+            status: SessionStatus::New,
+            metadata: SessionMetadata {
+                start_time: chrono_now_placeholder(),
+                end_time: None,
+            },
+            scope: AssessmentScope {
+                interface: "None".to_string(),
+                target_bssids: Vec::new(),
+                target_ssids: Vec::new(),
+                operator_notes: String::new(),
+                environment: "Authorized Lab Scope".to_string(),
+            },
+            observations: SessionObservations {
+                access_points: HashMap::new(),
+                clients: HashMap::new(),
+            },
+            evidence: Vec::new(),
+            findings: Vec::new(),
+            timeline: vec![TimelineEvent {
+                timestamp: chrono_now_placeholder(),
+                event_type: "Lifecycle".to_string(),
+                description: "Assessment session initialized.".to_string(),
+            }],
+        }
+    }
+}
+
+fn uuid_v4_placeholder() -> String {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let start = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_nanos();
+    format!("{:x}", start)
+}
+
+fn chrono_now_placeholder() -> String {
+    // Standard format: YYYY-MM-DD HH:MM:SS
+    // Note: Since types.rs is shared and we want to keep it light without adding chrono dependency if possible,
+    // we can use standard system time or include chrono. Let's check: types.rs doesn't import chrono but gui/agent do.
+    // Actually, we can use a helper or pass it, or just use standard formatting. Let's see: types.rs is in common which doesn't use chrono.
+    // Wait, let's check common's Cargo.toml to see if it has chrono. No, common doesn't have chrono in Cargo.toml.
+    // Let's format it using std::time:
+    let now = std::time::SystemTime::now();
+    let seconds = now.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs();
+    // Simple conversion placeholder (the GUI can overwrite/update timestamps with chrono)
+    format!("UNIX:{}", seconds)
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum SessionStatus {
+    New,
+    Active,
+    Paused,
+    Completed,
+    Archived,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SessionMetadata {
+    pub start_time: String,
+    pub end_time: Option<String>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct AssessmentScope {
+    pub interface: String,
+    pub target_bssids: Vec<String>,
+    pub target_ssids: Vec<String>,
+    pub operator_notes: String,
+    pub environment: String,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SessionObservations {
+    pub access_points: HashMap<String, AP>,
+    pub clients: HashMap<String, Client>,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct SessionEvidence {
+    pub id: String,
+    pub evidence_type: EvidenceType,
+    pub target_bssid: String,
+    pub target_essid: String,
+    pub timestamp: String,
+    pub file_path: Option<String>,
+    pub details: String,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum EvidenceType {
+    Handshake,
+    Pmkid,
+    WpsPinResponse,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct Finding {
+    pub id: String,
+    pub category: String,
+    pub severity: Severity,
+    pub title: String,
+    pub description: String,
+    pub affected_target: String,
+    pub evidence_ids: Vec<String>,
+    pub timestamp: String,
+    pub remediation: String,
+    pub references: Vec<String>,
+}
+
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq, Eq)]
+pub enum Severity {
+    Critical,
+    High,
+    Medium,
+    Low,
+    Info,
+}
+
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct TimelineEvent {
+    pub timestamp: String,
+    pub event_type: String,
+    pub description: String,
 }

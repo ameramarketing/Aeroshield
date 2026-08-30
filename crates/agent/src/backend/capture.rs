@@ -18,13 +18,19 @@ pub fn update_handshakes() -> std::io::Result<()> {
         return Ok(());
     }
 
-    let handshakes = get_handshakes(&paths)?;
+    let results = get_handshakes(&paths)?;
 
     let mut aps = get_aps();
 
-    for (bssid, _) in handshakes {
+    for (bssid, _) in results.handshakes {
         if let Some(ap) = aps.get_mut(&bssid) {
             ap.handshake = true;
+        }
+    }
+
+    for (bssid, _) in results.pmkids {
+        if let Some(ap) = aps.get_mut(&bssid) {
+            ap.pmkid = true;
         }
     }
 

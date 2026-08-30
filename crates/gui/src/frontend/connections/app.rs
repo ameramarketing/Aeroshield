@@ -714,6 +714,162 @@ fn connect_bottom_button(app_data: Rc<AppData>) {
     ));
 }
 
+fn refresh_session_dashboard(app_data: &AppData) {
+    let mut session = globals::CURRENT_SESSION.lock().unwrap();
+    if session.status != aeroshield_common::types::SessionStatus::Active {
+        return;
+    }
+
+    // Sync observations from local mirror
+    let local_aps = backend::get_aps();
+    let local_clients = backend::get_unlinked_clients();
+    session.observations.access_points = local_aps.clone();
+    session.observations.clients = local_clients.clone();
+
+    // Drop lock briefly to log timeline and findings safely (since they lock CURRENT_SESSION themselves)
+    drop(session);
+
+    // Threat analysis & findings logic
+    for (bssid, ap) in &local_aps {
+        let privacy = ap.privacy.to_uppercase();
+        if privacy.contains("WEP") {
+            log_finding(
+                "Encryption",
+                aeroshield_common::types::Severity::Critical,
+                &format!("WEP Protocol In Use: {}", ap.essid),
+                &format!("The network {} ({}) utilizes WEP encryption, which is cryptographically vulnerable and trivially compromised.", ap.essid, bssid),
+                bssid,
+                "Upgrade security to WPA2/WPA3 and disable WEP support.",
+                Vec::new(),
+            );
+        } else if privacy.contains("OPN") {
+            log_finding(
+                "Encryption",
+                aeroshield_common::types::Severity::High,
+                &format!("Open Unencrypted Network: {}", ap.essid),
+                &format!("The network {} ({}) does not require any credentials (OPN). All wireless traffic is broadcast in the clear.", ap.essid, bssid),
+                bssid,
+                "Implement OWE (Opportunistic Wireless Encryption) or secure with WPA3-SAE.",
+                Vec::new(),
+            );
+        }
+
+        // Evidence capture mapping
+        if ap.handshake {
+            let already_exists = {
+                let s = globals::CURRENT_SESSION.lock().unwrap();
+                s.evidence.iter().any(|ev| ev.target_bssid == *bssid && ev.evidence_type == aeroshield_common::types::EvidenceType::Handshake)
+            };
+            if !already_exists {
+                let evidence_id = add_session_evidence(
+                    aeroshield_common::types::EvidenceType::Handshake,
+                    bssid,
+                    &ap.essid,
+                    ap.saved_handshake.clone(),
+                    "Captured WPA/WPA2 4-Way Handshake EAPOL packets."
+                );
+                log_timeline_event("Evidence", &format!("Authentication handshake captured for network {} ({}).", ap.essid, bssid));
+                log_finding(
+                    "Authentication",
+                    aeroshield_common::types::Severity::Medium,
+                    &format!("Captured Handshake: {}", ap.essid),
+                    &format!("EAPOL handshake collected from {} ({}). This payload can be subject to offline dictionary cracking.", ap.essid, bssid),
+                    bssid,
+                    "Enforce complex passwords (high entropy) to defend against offline dictionary attacks.",
+                    vec![evidence_id],
+                );
+            }
+        }
+
+        if ap.pmkid {
+            let already_exists = {
+                let s = globals::CURRENT_SESSION.lock().unwrap();
+                s.evidence.iter().any(|ev| ev.target_bssid == *bssid && ev.evidence_type == aeroshield_common::types::EvidenceType::Pmkid)
+            };
+            if !already_exists {
+                let evidence_id = add_session_evidence(
+                    aeroshield_common::types::EvidenceType::Pmkid,
+                    bssid,
+                    &ap.essid,
+                    None,
+                    "Extracted RSN IE PMKID packet."
+                );
+                log_timeline_event("Evidence", &format!("Captured RSN IE PMKID for network {} ({}).", ap.essid, bssid));
+                log_finding(
+                    "Authentication",
+                    aeroshield_common::types::Severity::Medium,
+                    &format!("Captured PMKID: {}", ap.essid),
+                    &format!("RSN IE PMKID frame collected from {} ({}). PMKID attacks allow offline recovery without active client stations.", ap.essid, bssid),
+                    bssid,
+                    "Enforce high-entropy WPA credentials and transition to WPA3 SAE.",
+                    vec![evidence_id],
+                );
+            }
+        }
+    }
+
+    // Re-lock to perform dashboard counts and list updates
+    let session = globals::CURRENT_SESSION.lock().unwrap();
+    let status_str = format!("{:?}", session.status).to_uppercase();
+    app_data.app_gui.session_tab.status_label.set_text(&status_str);
+    
+    // Auto-update interface if empty
+    if session.scope.interface != "None" {
+        app_data.app_gui.session_tab.interface_label.set_text(&session.scope.interface);
+    }
+
+    let mut high = 0;
+    let mut med = 0;
+    let mut low = 0;
+    for ap in session.observations.access_points.values() {
+        let privacy = ap.privacy.to_uppercase();
+        if privacy.contains("WEP") || privacy.contains("OPN") {
+            high += 1;
+        } else if privacy.contains("WPA3") {
+            low += 1;
+        } else {
+            med += 1;
+        }
+    }
+    app_data.app_gui.session_tab.risk_high_label.set_markup(&format!("<span foreground='red'>{}</span>", high));
+    app_data.app_gui.session_tab.risk_med_label.set_markup(&format!("<span foreground='orange'>{}</span>", med));
+    app_data.app_gui.session_tab.risk_low_label.set_markup(&format!("<span foreground='green'>{}</span>", low));
+
+    let hs_count = session.evidence.iter().filter(|ev| ev.evidence_type == aeroshield_common::types::EvidenceType::Handshake).count();
+    let pmkid_count = session.evidence.iter().filter(|ev| ev.evidence_type == aeroshield_common::types::EvidenceType::Pmkid).count();
+    app_data.app_gui.session_tab.handshakes_label.set_text(&hs_count.to_string());
+    app_data.app_gui.session_tab.pmkids_label.set_text(&pmkid_count.to_string());
+
+    // Sync findings Table
+    app_data.app_gui.session_tab.findings_store.clear();
+    for f in &session.findings {
+        app_data.app_gui.session_tab.findings_store.set(
+            &app_data.app_gui.session_tab.findings_store.append(),
+            &[
+                (0, &format!("{:?}", f.severity).to_uppercase()),
+                (1, &f.affected_target),
+                (2, &f.title),
+                (3, &f.description),
+            ],
+        );
+    }
+
+    // Sync timeline Table (Newest on top)
+    app_data.app_gui.session_tab.timeline_store.clear();
+    let mut sorted_timeline = session.timeline.clone();
+    sorted_timeline.reverse();
+    for t in &sorted_timeline {
+        app_data.app_gui.session_tab.timeline_store.set(
+            &app_data.app_gui.session_tab.timeline_store.append(),
+            &[
+                (0, &t.timestamp),
+                (1, &t.event_type),
+                (2, &t.description),
+            ],
+        );
+    }
+}
+
 fn start_app_refresh(app_data: Rc<AppData>) {
     glib::timeout_add_local(
         Duration::from_millis(100),
@@ -903,8 +1059,32 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                         wps_tab.progress.set_fraction(fraction / 100.0);
                     }
                     wps_tab.update_logs(&logs);
-                    if let Some(p) = pin {
+                    if let Some(p) = pin.clone() {
                         wps_tab.pin_label.set_text(&p);
+                        
+                        let already_exists = {
+                            let s = globals::CURRENT_SESSION.lock().unwrap();
+                            s.evidence.iter().any(|ev| ev.evidence_type == aeroshield_common::types::EvidenceType::WpsPinResponse && ev.details.contains(&p))
+                        };
+                        if !already_exists {
+                            let evidence_id = add_session_evidence(
+                                aeroshield_common::types::EvidenceType::WpsPinResponse,
+                                "WPS Target",
+                                "WPS Target",
+                                None,
+                                &format!("Recovered WPS PIN: {} (PSK: {:?})", p, psk),
+                            );
+                            log_timeline_event("WPS", &format!("WPS PIN cracked: {}.", p));
+                            log_finding(
+                                "WPS",
+                                aeroshield_common::types::Severity::Critical,
+                                "WPS PIN Recovered",
+                                &format!("Exploitation of router WPS vulnerability successfully recovered PIN: {} and PSK: {:?}", p, psk),
+                                "WPS Target",
+                                "Disable WPS (Wi-Fi Protected Setup) in router administration panel.",
+                                vec![evidence_id],
+                            );
+                        }
                     }
                     if let Some(s) = psk {
                         wps_tab.psk_label.set_text(&s);
@@ -926,10 +1106,36 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                     }
                     
                     et_tab.creds_store.clear();
-                    for cred in credentials {
-                        et_tab.creds_store.set(&et_tab.creds_store.append(), &[(0, &cred)]);
+                    for cred in &credentials {
+                        et_tab.creds_store.set(&et_tab.creds_store.append(), &[(0, cred)]);
+                        
+                        let already_exists = {
+                            let s = globals::CURRENT_SESSION.lock().unwrap();
+                            s.evidence.iter().any(|ev| ev.details.contains(cred))
+                        };
+                        if !already_exists {
+                            let evidence_id = add_session_evidence(
+                                aeroshield_common::types::EvidenceType::Handshake,
+                                "Rogue AP",
+                                "Evil Twin Portal",
+                                None,
+                                &format!("Credentials submitted: {}", cred),
+                            );
+                            log_timeline_event("Evil Twin", &format!("Twin portal captured credential: {}.", cred));
+                            log_finding(
+                                "Social Engineering",
+                                aeroshield_common::types::Severity::Critical,
+                                "Credential Exposed to Rogue Access Point",
+                                &format!("Simulated security assessment portal collected authentication: {}", cred),
+                                "Rogue Portal",
+                                "Conduct training for users to inspect portal domain names, avoid untrusted HTTP pages, and leverage Enterprise WPA (802.1X).",
+                                vec![evidence_id],
+                            );
+                        }
                     }
                 }
+
+                refresh_session_dashboard(&app_data);
 
                 drive_channel_filter_from_attacks(&app_data);
                 update_channel_status(&app_data);
@@ -1145,6 +1351,151 @@ fn connect_evil_twin_tab(app_data: Rc<AppData>) {
     ));
 }
 
+fn connect_session_tab(app_data: Rc<AppData>) {
+    // Sync UI notes editor to model notes
+    app_data.app_gui.session_tab.notes_buffer.connect_changed(clone!(
+        #[strong]
+        app_data,
+        move |buf| {
+            let (start, end) = buf.bounds();
+            let text = buf.text(&start, &end, false).to_string();
+            let mut session = globals::CURRENT_SESSION.lock().unwrap();
+            session.scope.operator_notes = text;
+        }
+    ));
+
+    // Sync environment dropdown
+    app_data.app_gui.session_tab.environment_combo.connect_changed(clone!(
+        #[strong]
+        app_data,
+        move |combo| {
+            if let Some(text) = combo.active_text() {
+                let mut session = globals::CURRENT_SESSION.lock().unwrap();
+                session.scope.environment = text.to_string();
+            }
+        }
+    ));
+
+    // Sync target scope entry
+    app_data.app_gui.session_tab.target_scope_entry.connect_changed(clone!(
+        #[strong]
+        app_data,
+        move |entry| {
+            let text = entry.text().to_string();
+            let mut session = globals::CURRENT_SESSION.lock().unwrap();
+            let targets: Vec<String> = text.split(',').map(|s| s.trim().to_string()).filter(|s| !s.is_empty()).collect();
+            let (bssids, ssids): (Vec<String>, Vec<String>) = targets.into_iter().partition(|t| t.contains(':'));
+            session.scope.target_bssids = bssids;
+            session.scope.target_ssids = ssids;
+        }
+    ));
+
+    // Wire up Session status button
+    app_data.app_gui.session_tab.action_but.connect_clicked(clone!(
+        #[strong]
+        app_data,
+        move |but| {
+            let mut session = globals::CURRENT_SESSION.lock().unwrap();
+            match session.status {
+                aeroshield_common::types::SessionStatus::New => {
+                    session.status = aeroshield_common::types::SessionStatus::Active;
+                    session.metadata.start_time = get_chrono_now();
+                    but.set_label("Pause Session");
+                    let notes_buf = &app_data.app_gui.session_tab.notes_buffer;
+                    let (start, end) = notes_buf.bounds();
+                    session.scope.operator_notes = notes_buf.text(&start, &end, false).to_string();
+                    if let Some(text) = app_data.app_gui.session_tab.environment_combo.active_text() {
+                        session.scope.environment = text.to_string();
+                    }
+                    drop(session);
+                    log_timeline_event("Lifecycle", "Session status changed to ACTIVE.");
+                }
+                aeroshield_common::types::SessionStatus::Active => {
+                    session.status = aeroshield_common::types::SessionStatus::Paused;
+                    but.set_label("Resume Session");
+                    drop(session);
+                    log_timeline_event("Lifecycle", "Session status changed to PAUSED.");
+                }
+                aeroshield_common::types::SessionStatus::Paused => {
+                    session.status = aeroshield_common::types::SessionStatus::Active;
+                    but.set_label("Pause Session");
+                    drop(session);
+                    log_timeline_event("Lifecycle", "Session status changed to ACTIVE.");
+                }
+                _ => {}
+            }
+            let session = globals::CURRENT_SESSION.lock().unwrap();
+            app_data.app_gui.session_tab.status_label.set_text(&format!("{:?}", session.status).to_uppercase());
+        }
+    ));
+}
+
+pub fn log_timeline_event(event_type: &str, description: &str) {
+    let mut session = globals::CURRENT_SESSION.lock().unwrap();
+    let timestamp = get_chrono_now();
+    session.timeline.push(aeroshield_common::types::TimelineEvent {
+        timestamp,
+        event_type: event_type.to_string(),
+        description: description.to_string(),
+    });
+}
+
+pub fn log_finding(
+    category: &str,
+    severity: aeroshield_common::types::Severity,
+    title: &str,
+    description: &str,
+    affected_target: &str,
+    remediation: &str,
+    evidence_ids: Vec<String>,
+) {
+    let mut session = globals::CURRENT_SESSION.lock().unwrap();
+    let id = format!("finding_{:x}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos());
+    
+    if session.findings.iter().any(|f| f.affected_target == affected_target && f.category == category) {
+        return;
+    }
+    
+    session.findings.push(aeroshield_common::types::Finding {
+        id,
+        category: category.to_string(),
+        severity,
+        title: title.to_string(),
+        description: description.to_string(),
+        affected_target: affected_target.to_string(),
+        evidence_ids,
+        timestamp: get_chrono_now(),
+        remediation: remediation.to_string(),
+        references: vec!["NIST Wireless Security Guidelines".to_string()],
+    });
+}
+
+pub fn add_session_evidence(
+    evidence_type: aeroshield_common::types::EvidenceType,
+    target_bssid: &str,
+    target_essid: &str,
+    file_path: Option<String>,
+    details: &str,
+) -> String {
+    let mut session = globals::CURRENT_SESSION.lock().unwrap();
+    let id = format!("evidence_{:x}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos());
+    session.evidence.push(aeroshield_common::types::SessionEvidence {
+        id: id.clone(),
+        evidence_type,
+        target_bssid: target_bssid.to_string(),
+        target_essid: target_essid.to_string(),
+        timestamp: get_chrono_now(),
+        file_path,
+        details: details.to_string(),
+    });
+    id
+}
+
+pub fn get_chrono_now() -> String {
+    let local = chrono::Local::now();
+    local.format("%Y-%m-%d %H:%M:%S").to_string()
+}
+
 pub fn connect(app: &Application, app_data: Rc<AppData>) {
     connect_window_controller(app_data.clone());
 
@@ -1173,5 +1524,6 @@ pub fn connect(app: &Application, app_data: Rc<AppData>) {
     connect_capture_button(app_data.clone());
 
     connect_wps_tab(app_data.clone());
-    connect_evil_twin_tab(app_data);
+    connect_evil_twin_tab(app_data.clone());
+    connect_session_tab(app_data);
 }
