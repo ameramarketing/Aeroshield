@@ -110,7 +110,7 @@ fn connect_handshake_button(app_data: Rc<AppData>) {
                         let results = backend::get_handshakes([file_path]);
                         let results = match results {
                             Ok(res) => res,
-                            Err(_) => aeroshield_common::types::HandshakeResults {
+                            Err(_) => aeroshield_common::handshake::HandshakeResults {
                                 handshakes: Vec::new(),
                                 pmkids: Vec::new(),
                             }

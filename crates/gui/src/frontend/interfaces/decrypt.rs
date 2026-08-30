@@ -281,7 +281,7 @@ impl DecryptGui {
             let results = backend::get_handshakes([&path]);
             let results = match results {
                 Ok(res) => res,
-                Err(_) => aeroshield_common::types::HandshakeResults {
+                Err(_) => aeroshield_common::handshake::HandshakeResults {
                     handshakes: Vec::new(),
                     pmkids: Vec::new(),
                 }
@@ -303,7 +303,7 @@ impl DecryptGui {
             }
 
             for (hs_bssid, hs_essid) in &all_targets {
-                if hs_bssid == &bssid {
+                if hs_bssid.as_str() == bssid.as_str() {
                     self.target_model
                         .insert_with_values(None, &[(0, hs_bssid), (1, hs_essid)]);
                 }
