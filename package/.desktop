@@ -4,6 +4,6 @@ Comment=A WiFi security auditing software mainly based on aircrack-ng tools suit
 Exec=aeroshield
 Icon=/usr/share/pixmaps/aeroshield.png
 Categories=Network;Monitor;GTK;
-StartupWMClass=com.molivier.aeroshield
+StartupWMClass=com.ameramarketing.aeroshield
 Type=Application
 Terminal=false

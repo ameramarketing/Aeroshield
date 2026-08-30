@@ -60,7 +60,7 @@ Move the binaries to your path and copy the desktop shortcut and security polici
 ```bash
 sudo cp target/release/aeroshield /usr/bin/
 sudo cp target/release/aeroshield-agent /usr/bin/
-sudo cp package/.desktop /usr/share/applications/com.molivier.aeroshield.desktop
+sudo cp package/.desktop /usr/share/applications/com.ameramarketing.aeroshield.desktop
 sudo cp package/.policy /usr/share/polkit-1/actions/org.freedesktop.policykit.aeroshield.policy
 sudo cp crates/gui/icons/app_icon.png /usr/share/pixmaps/aeroshield.png
 ```

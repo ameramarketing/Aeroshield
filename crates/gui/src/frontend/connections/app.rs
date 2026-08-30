@@ -461,12 +461,16 @@ fn connect_add_button(app_data: Rc<AppData>) {
 
 pub fn update_buttons_sensitivity(app_data: &Rc<AppData>) {
     let iter = match app_data.app_gui.aps_view.selection().selected() {
-        Some((_, iter)) => iter,
+        Some((_, iter)) => {
+            app_data.app_gui.wps_tab.action_but.set_sensitive(true);
+            iter
+        }
         None => {
             app_data.app_gui.focus_but.set_sensitive(false);
             app_data.app_gui.add_but.set_sensitive(false);
             app_data.app_gui.deauth_but.set_sensitive(false);
             app_data.app_gui.capture_but.set_sensitive(false);
+            app_data.app_gui.wps_tab.action_but.set_sensitive(false);
 
             app_data.app_gui.previous_but.set_sensitive(false);
             app_data.app_gui.next_but.set_sensitive(false);
@@ -878,6 +882,55 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                     app_data.app_gui.report_but.set_sensitive(true);
                 }
 
+                // Push current signal level to graph
+                if let Some((_, iter)) = app_data.app_gui.aps_view.selection().selected() {
+                    let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
+                    if let Some(ap) = aps.get(&bssid) {
+                        if let Ok(power) = ap.power.parse::<i32>() {
+                            app_data.app_gui.signal_graph.push_signal(power);
+                        }
+                    }
+                } else {
+                    app_data.app_gui.signal_graph.clear();
+                }
+
+                // Poll WPS status
+                if let Ok((status, progress, logs, pin, psk)) = backend::get_wps_status() {
+                    let wps_tab = &app_data.app_gui.wps_tab;
+                    wps_tab.status_label.set_text(&status);
+                    wps_tab.progress.set_text(Some(&progress));
+                    if let Ok(fraction) = progress.replace("%", "").trim().parse::<f64>() {
+                        wps_tab.progress.set_fraction(fraction / 100.0);
+                    }
+                    wps_tab.update_logs(&logs);
+                    if let Some(p) = pin {
+                        wps_tab.pin_label.set_text(&p);
+                    }
+                    if let Some(s) = psk {
+                        wps_tab.psk_label.set_text(&s);
+                    }
+                    if status == "RUNNING" {
+                        wps_tab.set_running();
+                    } else {
+                        wps_tab.set_idle();
+                    }
+                }
+
+                // Poll Evil Twin status
+                if let Ok((active, _clients, credentials)) = backend::get_evil_twin_status() {
+                    let et_tab = &app_data.app_gui.evil_twin_tab;
+                    if active {
+                        et_tab.set_running();
+                    } else {
+                        et_tab.set_idle();
+                    }
+                    
+                    et_tab.creds_store.clear();
+                    for cred in credentials {
+                        et_tab.creds_store.set(&et_tab.creds_store.append(), &[(0, &cred)]);
+                    }
+                }
+
                 drive_channel_filter_from_attacks(&app_data);
                 update_channel_status(&app_data);
                 update_buttons_sensitivity(&app_data);
@@ -1025,6 +1078,73 @@ fn connect_capture_button(app_data: Rc<AppData>) {
     ));
 }
 
+fn connect_wps_tab(app_data: Rc<AppData>) {
+    app_data.app_gui.wps_tab.action_but.connect_clicked(clone!(
+        #[strong]
+        app_data,
+        move |_| {
+            let status = app_data.app_gui.wps_tab.status_label.text();
+            if status == "RUNNING" {
+                if let Err(e) = backend::stop_wps_audit() {
+                    ErrorDialog::spawn(&app_data.app_gui.window, "Error", &e.to_string());
+                }
+            } else {
+                let iter = match app_data.app_gui.aps_view.selection().selected() {
+                    Some((_, iter)) => iter,
+                    None => return,
+                };
+                let bssid = list_store_get!(app_data.app_gui.aps_model, &iter, 1, String);
+                let channel = list_store_get!(app_data.app_gui.aps_model, &iter, 3, i32).to_string();
+                let pixie = app_data.app_gui.wps_tab.pixie_check.is_active();
+                let iface = match backend::get_iface() {
+                    Some(iface) => iface,
+                    None => return ErrorDialog::spawn(&app_data.app_gui.window, "Error", "No monitor interface enabled"),
+                };
+                if let Err(e) = backend::start_wps_audit(&iface, &bssid, &channel, pixie) {
+                    ErrorDialog::spawn(&app_data.app_gui.window, "Error", &e.to_string());
+                }
+            }
+        }
+    ));
+}
+
+fn connect_evil_twin_tab(app_data: Rc<AppData>) {
+    // Populate interface combobox with existing interfaces on connect
+    if let Ok(interfaces) = backend::get_interfaces() {
+        for iface in &interfaces {
+            app_data.app_gui.evil_twin_tab.interface_combo.append_text(iface);
+        }
+        if !interfaces.is_empty() {
+            app_data.app_gui.evil_twin_tab.interface_combo.set_active(Some(0));
+        }
+    }
+
+    app_data.app_gui.evil_twin_tab.action_but.connect_clicked(clone!(
+        #[strong]
+        app_data,
+        move |_| {
+            let active = app_data.app_gui.evil_twin_tab.status_label.text() == "ACTIVE";
+            if active {
+                if let Err(e) = backend::stop_evil_twin() {
+                    ErrorDialog::spawn(&app_data.app_gui.window, "Error", &e.to_string());
+                }
+            } else {
+                let iface = match app_data.app_gui.evil_twin_tab.interface_combo.active_text() {
+                    Some(text) => text.to_string(),
+                    None => return ErrorDialog::spawn(&app_data.app_gui.window, "Error", "No interface selected"),
+                };
+                let essid = app_data.app_gui.evil_twin_tab.essid_entry.text().to_string();
+                let channel = app_data.app_gui.evil_twin_tab.channel_entry.text().parse::<u32>().unwrap_or(6);
+                let portal_ip = app_data.app_gui.evil_twin_tab.ip_entry.text().to_string();
+
+                if let Err(e) = backend::start_evil_twin(&iface, &essid, channel, &portal_ip) {
+                    ErrorDialog::spawn(&app_data.app_gui.window, "Error", &e.to_string());
+                }
+            }
+        }
+    ));
+}
+
 pub fn connect(app: &Application, app_data: Rc<AppData>) {
     connect_window_controller(app_data.clone());
 
@@ -1050,5 +1170,8 @@ pub fn connect(app: &Application, app_data: Rc<AppData>) {
     connect_add_button(app_data.clone());
 
     connect_deauth_button(app_data.clone());
-    connect_capture_button(app_data);
+    connect_capture_button(app_data.clone());
+
+    connect_wps_tab(app_data.clone());
+    connect_evil_twin_tab(app_data);
 }

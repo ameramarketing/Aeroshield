@@ -231,6 +231,70 @@ fn dispatch(request: Request) -> (Response, bool) {
             Err(e) => (err(e), false),
         },
 
+        // --- WPS ---
+        Request::StartWps { iface, bssid, channel, pixie } => {
+            if !is_valid_interface_name(&iface) {
+                return (err("invalid interface name"), false);
+            }
+            if !is_valid_mac(&bssid) {
+                return (err("invalid BSSID"), false);
+            }
+            match backend::wps::start_audit(&iface, &bssid, &channel, pixie) {
+                Ok(()) => (Response::Ok, false),
+                Err(e) => (err(e), false),
+            }
+        }
+        Request::StopWps => {
+            match backend::wps::stop_audit() {
+                Ok(()) => (Response::Ok, false),
+                Err(e) => (err(e), false),
+            }
+        }
+        Request::GetWpsStatus => {
+            let state = backend::wps::WPS_STATE.lock().unwrap().clone();
+            (Response::WpsStatus {
+                status: state.status,
+                progress: state.progress,
+                logs: state.logs,
+                pin: state.pin,
+                psk: state.psk,
+            }, false)
+        }
+
+        // --- Evil Twin ---
+        Request::StartEvilTwin { iface, essid, channel, portal_ip } => {
+            if !is_valid_interface_name(&iface) {
+                return (err("invalid interface name"), false);
+            }
+            if essid.is_empty() || essid.len() > 32 {
+                return (err("invalid ESSID"), false);
+            }
+            let config = backend::evil_twin::EvilTwinConfig {
+                interface: iface,
+                essid,
+                channel,
+                portal_ip,
+            };
+            match backend::evil_twin::start(&config) {
+                Ok(()) => (Response::Ok, false),
+                Err(e) => (err(e), false),
+            }
+        }
+        Request::StopEvilTwin => {
+            match backend::evil_twin::stop() {
+                Ok(()) => (Response::Ok, false),
+                Err(e) => (err(e), false),
+            }
+        }
+        Request::GetEvilTwinStatus => {
+            let state = backend::evil_twin::EVIL_TWIN_STATE.lock().unwrap().clone();
+            (Response::EvilTwinStatus {
+                active: state.active,
+                clients: state.clients,
+                credentials: state.credentials,
+            }, false)
+        }
+
         Request::Shutdown => (Response::Ok, true),
     }
 }

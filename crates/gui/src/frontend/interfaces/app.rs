@@ -341,6 +341,10 @@ pub struct AppGui {
     pub client_status_bar: Statusbar,
     pub channel_status_bar: Statusbar,
     pub iface_status_bar: Statusbar,
+    pub signal_graph: SignalGraph,
+    pub wps_tab: WpsTab,
+    pub evil_twin_tab: EvilTwinTab,
+    pub sidebar_stack: Stack,
 }
 
 impl AppGui {
@@ -503,8 +507,32 @@ impl AppGui {
 
         client_status_bar.set_hexpand(true);
 
+        let main_paned = Paned::new(Orientation::Horizontal);
+        main_paned.set_wide_handle(true);
+        main_paned.set_start_child(Some(&panned_cli_aps));
+
+        // Construct sidebar stack and widgets
+        let sidebar_stack = Stack::new();
+        let signal_graph = SignalGraph::new();
+        let wps_tab = WpsTab::new();
+        let evil_twin_tab = EvilTwinTab::new();
+
+        sidebar_stack.add_titled(&signal_graph.handle, Some("graph"), "Graph");
+        sidebar_stack.add_titled(&wps_tab.container, Some("wps"), "WPS");
+        sidebar_stack.add_titled(&evil_twin_tab.container, Some("evil_twin"), "Evil Twin");
+
+        let stack_switcher = StackSwitcher::new();
+        stack_switcher.set_stack(Some(&sidebar_stack));
+
+        let sidebar_box = Box::new(Orientation::Vertical, 5);
+        sidebar_box.append(&stack_switcher);
+        sidebar_box.append(&sidebar_stack);
+        sidebar_box.set_width_request(320);
+
+        main_paned.set_end_child(Some(&sidebar_box));
+
         let vbox = Box::new(Orientation::Vertical, 0);
-        vbox.append(&panned_cli_aps);
+        vbox.append(&main_paned);
         vbox.append(&status_bar);
 
         window.set_child(Some(&vbox));
@@ -544,6 +572,10 @@ impl AppGui {
             client_status_bar,
             channel_status_bar,
             iface_status_bar,
+            signal_graph,
+            wps_tab,
+            evil_twin_tab,
+            sidebar_stack,
         }
     }
 

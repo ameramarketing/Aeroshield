@@ -166,3 +166,70 @@ fn generate_html_report(report: &Report) -> String {
     html.push_str("</body>\n</html>\n");
     html
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashMap;
+
+    #[test]
+    fn test_kml_generation() {
+        let mut ap = AP {
+            essid: "TestNet".to_string(),
+            bssid: "00:11:22:33:44:55".to_string(),
+            band: "2.4 GHz".to_string(),
+            channel: "6".to_string(),
+            power: "-50".to_string(),
+            privacy: "WPA2".to_string(),
+            hidden: false,
+            handshake: false,
+            saved_handshake: None,
+            first_time_seen: "2026-08-30 14:00:00".to_string(),
+            last_time_seen: "2026-08-30 14:05:00".to_string(),
+            latitude: Some(37.7749),
+            longitude: Some(-122.4194),
+            clients: HashMap::new(),
+        };
+
+        let report = Report {
+            access_points: vec![ap],
+            unlinked_clients: Vec::new(),
+        };
+
+        let kml = generate_kml_report(&report);
+        assert!(kml.contains("<kml"));
+        assert!(kml.contains("TestNet"));
+        assert!(kml.contains("-122.4194,37.7749,0"));
+    }
+
+    #[test]
+    fn test_html_generation() {
+        let ap = AP {
+            essid: "TestNet".to_string(),
+            bssid: "00:11:22:33:44:55".to_string(),
+            band: "2.4 GHz".to_string(),
+            channel: "6".to_string(),
+            power: "-50".to_string(),
+            privacy: "WPA2".to_string(),
+            hidden: false,
+            handshake: false,
+            saved_handshake: None,
+            first_time_seen: "2026-08-30 14:00:00".to_string(),
+            last_time_seen: "2026-08-30 14:05:00".to_string(),
+            latitude: Some(37.7749),
+            longitude: Some(-122.4194),
+            clients: HashMap::new(),
+        };
+
+        let report = Report {
+            access_points: vec![ap],
+            unlinked_clients: Vec::new(),
+        };
+
+        let html = generate_html_report(&report);
+        assert!(html.contains("<!DOCTYPE html>"));
+        assert!(html.contains("AeroShield Wireless Security Audit Report"));
+        assert!(html.contains("TestNet"));
+        assert!(html.contains("37.77490, -122.41940"));
+    }
+}

@@ -28,9 +28,34 @@ pub struct Tool {
 pub const CRUNCH: &str = "crunch";
 pub const SYSTEMCTL: &str = "systemctl";
 pub const PKEXEC: &str = "pkexec";
+pub const REAVER: &str = "reaver";
+pub const HOSTAPD: &str = "hostapd";
+pub const DNSMASQ: &str = "dnsmasq";
+pub const PYTHON3: &str = "python3";
 
 /// Every external tool AeroShield shells out to.
 pub const TOOLS: &[Tool] = &[
+    // Optional / on-demand tools for Evil Twin & WPS
+    Tool {
+        name: REAVER,
+        requirer: Requirer::Agent,
+        optional: true,
+    },
+    Tool {
+        name: HOSTAPD,
+        requirer: Requirer::Agent,
+        optional: true,
+    },
+    Tool {
+        name: DNSMASQ,
+        requirer: Requirer::Agent,
+        optional: true,
+    },
+    Tool {
+        name: PYTHON3,
+        requirer: Requirer::Agent,
+        optional: true,
+    },
     // Required.
     Tool {
         name: "sh",

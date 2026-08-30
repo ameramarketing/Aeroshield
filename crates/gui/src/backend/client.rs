@@ -495,3 +495,69 @@ pub fn check_update(current_version: &str) -> Option<String> {
 
     None
 }
+
+// --------------------------------------------------------------------------
+// WPS
+// --------------------------------------------------------------------------
+
+pub fn start_wps_audit(
+    iface: &str,
+    bssid: &str,
+    channel: &str,
+    pixie: bool,
+) -> Result<(), AgentError> {
+    ensure_agent()?;
+    expect_ok(request(Request::StartWps {
+        iface: iface.to_string(),
+        bssid: bssid.to_string(),
+        channel: channel.to_string(),
+        pixie,
+    })?)
+}
+
+pub fn stop_wps_audit() -> Result<(), AgentError> {
+    expect_ok(request(Request::StopWps)?)
+}
+
+pub fn get_wps_status() -> Result<(String, String, Vec<String>, Option<String>, Option<String>), AgentError> {
+    match request(Request::GetWpsStatus)? {
+        Response::WpsStatus { status, progress, logs, pin, psk } => {
+            Ok((status, progress, logs, pin, psk))
+        }
+        Response::Error { message } => Err(AgentError(message)),
+        _ => Err(AgentError("unexpected response from agent".to_string())),
+    }
+}
+
+// --------------------------------------------------------------------------
+// Evil Twin
+// --------------------------------------------------------------------------
+
+pub fn start_evil_twin(
+    iface: &str,
+    essid: &str,
+    channel: u32,
+    portal_ip: &str,
+) -> Result<(), AgentError> {
+    ensure_agent()?;
+    expect_ok(request(Request::StartEvilTwin {
+        iface: iface.to_string(),
+        essid: essid.to_string(),
+        channel,
+        portal_ip: portal_ip.to_string(),
+    })?)
+}
+
+pub fn stop_evil_twin() -> Result<(), AgentError> {
+    expect_ok(request(Request::StopEvilTwin)?)
+}
+
+pub fn get_evil_twin_status() -> Result<(bool, Vec<String>, Vec<String>), AgentError> {
+    match request(Request::GetEvilTwinStatus)? {
+        Response::EvilTwinStatus { active, clients, credentials } => {
+            Ok((active, clients, credentials))
+        }
+        Response::Error { message } => Err(AgentError(message)),
+        _ => Err(AgentError("unexpected response from agent".to_string())),
+    }
+}

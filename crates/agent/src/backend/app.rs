@@ -9,6 +9,8 @@ use super::*;
 pub fn app_cleanup() {
     stop_scan_process().ok();
     stop_all_deauth_attacks();
+    let _ = super::wps::stop_audit();
+    let _ = super::evil_twin::stop();
 
     if let Some(ref iface) = get_iface() {
         disable_monitor_mode(iface).ok();

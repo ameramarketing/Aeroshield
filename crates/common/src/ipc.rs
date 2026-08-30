@@ -82,6 +82,26 @@ pub enum Request {
 
     /// Ask the agent to clean up and exit.
     Shutdown,
+
+    // --- WPS ---
+    StartWps {
+        iface: String,
+        bssid: String,
+        channel: String,
+        pixie: bool,
+    },
+    StopWps,
+    GetWpsStatus,
+
+    // --- Evil Twin ---
+    StartEvilTwin {
+        iface: String,
+        essid: String,
+        channel: u32,
+        portal_ip: String,
+    },
+    StopEvilTwin,
+    GetEvilTwinStatus,
 }
 
 /// A reply from the agent to a [`Request`].
@@ -111,6 +131,18 @@ pub enum Response {
     CaptureChunk {
         data: Vec<u8>,
         last: bool,
+    },
+    WpsStatus {
+        status: String,
+        progress: String,
+        logs: Vec<String>,
+        pin: Option<String>,
+        psk: Option<String>,
+    },
+    EvilTwinStatus {
+        active: bool,
+        clients: Vec<String>,
+        credentials: Vec<String>,
     },
 }
 
@@ -149,4 +181,43 @@ pub fn read_msg<R: Read, T: DeserializeOwned>(r: &mut R) -> io::Result<T> {
     r.read_exact(&mut buf)?;
 
     serde_json::from_slice(&buf).map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_ipc_hello_serialization() {
+        let req = Request::Hello {
+            version: "1.0.0".to_string(),
+        };
+        let serialized = serde_json::to_string(&req).unwrap();
+        let deserialized: Request = serde_json::from_str(&serialized).unwrap();
+        if let Request::Hello { version } = deserialized {
+            assert_eq!(version, "1.0.0");
+        } else {
+            panic!("Expected Hello variant");
+        }
+    }
+
+    #[test]
+    fn test_ipc_wps_requests() {
+        let req = Request::StartWps {
+            iface: "wlan0".to_string(),
+            bssid: "11:22:33:44:55:66".to_string(),
+            channel: "6".to_string(),
+            pixie: true,
+        };
+        let serialized = serde_json::to_string(&req).unwrap();
+        let deserialized: Request = serde_json::from_str(&serialized).unwrap();
+        if let Request::StartWps { iface, bssid, channel, pixie } = deserialized {
+            assert_eq!(iface, "wlan0");
+            assert_eq!(bssid, "11:22:33:44:55:66");
+            assert_eq!(channel, "6");
+            assert!(pixie);
+        } else {
+            panic!("Expected StartWps variant");
+        }
+    }
 }

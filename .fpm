@@ -4,7 +4,7 @@
 --version 0.8.1
 --description "A WiFi security auditing software mainly based on aircrack-ng tools suite"
 --url "https://github.com/ameramarketing/aeroshield"
---maintainer "Martin Olivier <martin.olivier@live.fr>"
+--maintainer "Amjad Khan <ameramarketing@gmail.com>"
 
 --provides aeroshield
 --conflicts aeroshield
@@ -20,7 +20,7 @@ target/debug/aeroshield=/usr/bin/aeroshield
 target/debug/aeroshield-agent=/usr/bin/aeroshield-agent
 crates/gui/icons/app_icon.png=/usr/share/pixmaps/aeroshield.png
 
-package/.desktop=/usr/share/applications/com.molivier.aeroshield.desktop
+package/.desktop=/usr/share/applications/com.ameramarketing.aeroshield.desktop
 package/.policy=/usr/share/polkit-1/actions/org.freedesktop.policykit.aeroshield.policy
 
 README.md=/usr/share/doc/aeroshield/README.md

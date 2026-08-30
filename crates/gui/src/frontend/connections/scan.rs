@@ -162,10 +162,27 @@ fn connect_report_button(app_data: Rc<AppData>) {
                 ],
             ));
 
+            let filter_json = FileFilter::new();
+            filter_json.set_name(Some("JSON Report (*.json)"));
+            filter_json.add_pattern("*.json");
+
+            let filter_html = FileFilter::new();
+            filter_html.set_name(Some("HTML Report (*.html, *.htm)"));
+            filter_html.add_pattern("*.html");
+            filter_html.add_pattern("*.htm");
+
+            let filter_kml = FileFilter::new();
+            filter_kml.set_name(Some("KML Map (*.kml)"));
+            filter_kml.add_pattern("*.kml");
+
+            file_chooser_dialog.add_filter(&filter_json);
+            file_chooser_dialog.add_filter(&filter_html);
+            file_chooser_dialog.add_filter(&filter_kml);
+
             let local = Local::now();
             let date = local.format("%Y-%m-%d-%Hh%M");
 
-            file_chooser_dialog.set_current_name(&format!("report_{date}.json"));
+            file_chooser_dialog.set_current_name(&format!("report_{date}.html"));
             file_chooser_dialog.run_async(clone!(
                 #[strong]
                 app_data,
