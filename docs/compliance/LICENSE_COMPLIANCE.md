@@ -12,6 +12,7 @@ This document records the final compliance audit of the AeroShield Wireless Secu
 *   **Copyright Notices Preservation**: Martin Olivier's original copyright notices have been fully preserved across all derived source files. No original copyright notices have been replaced, removed, or obscured.
 *   **AeroShield Copyright Claims**: Amjad Khan's copyright notices are strictly limited to files containing original AeroShield contributions (Category B). No ownership is claimed over inherited upstream components.
 *   **Ownership Statement Verification**: There are no misleading ownership statements in the codebase. All attributions are correct and consistent.
+*   **Copyright Year Status**: Exact upstream source commit could not be established; therefore the historical copyright year applicable to the precise source snapshot cannot be conclusively determined. This discrepancy has been flagged for human/legal review.
 
 ---
 

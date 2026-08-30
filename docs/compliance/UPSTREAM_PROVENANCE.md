@@ -10,10 +10,10 @@ This document records the exact upstream provenance of the AeroShield codebase, 
 *   **Upstream Author**: Martin Olivier <martin.olivier@live.fr>
 *   **Upstream Repository**: [https://github.com/martin-olivier/airgorah](https://github.com/martin-olivier/airgorah)
 *   **Target Upstream Tag/Version**: **v0.8.1**
-*   **Foundation Commit Verification**: 
-    "Exact upstream commit could not be conclusively established."
+*   **Foundation Commit & Copyright Year Verification**: 
+    "Exact upstream source commit could not be established; therefore the historical copyright year applicable to the precise source snapshot cannot be conclusively determined."
     
-    *Note*: The Git database of AeroShield was initialized as a clean import on August 30, 2026. However, package metadata versions (`0.8.1`) and dependency configurations in Cargo lock files confirm that the codebase was originally branched or cloned from the release snapshot of Airgorah version v0.8.1.
+    *Note on Discrepancy*: While package metadata indicates relation to Airgorah v0.8.1, the upstream LICENSE for v0.8.1 lists `Copyright (c) 2026 Martin Olivier`. The legacy source files imported into AeroShield contain `Copyright (c) 2023-2024 Martin Olivier`. Because the exact source snapshot or commit could not be conclusively determined, this year has been preserved in headers and flagged for human/legal review rather than auto-updated to 2026.
 
 ---
 
