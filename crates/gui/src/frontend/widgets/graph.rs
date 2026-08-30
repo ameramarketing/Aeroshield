@@ -11,7 +11,7 @@ pub struct SignalGraph {
 impl SignalGraph {
     pub fn new() -> Self {
         let handle = DrawingArea::new();
-        let history = Rc::new(RefCell::new(Vec::new()));
+        let history: Rc<RefCell<Vec<i32>>> = Rc::new(RefCell::new(Vec::new()));
 
         let history_clone = history.clone();
         handle.set_draw_func(move |area, cr, width, height| {

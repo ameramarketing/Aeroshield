@@ -278,9 +278,23 @@ impl DecryptGui {
         if let Some((path, bssid)) = capture_and_bssid {
             self.handshake_entry.set_text(&path);
 
-            let handshakes = backend::get_handshakes([&path]).unwrap_or_default();
+            let results = backend::get_handshakes([&path]);
+            let results = match results {
+                Ok(res) => res,
+                Err(_) => aeroshield_common::types::HandshakeResults {
+                    handshakes: Vec::new(),
+                    pmkids: Vec::new(),
+                }
+            };
 
-            if handshakes.is_empty() {
+            let mut all_targets = results.handshakes.clone();
+            for item in &results.pmkids {
+                if !all_targets.contains(item) {
+                    all_targets.push(item.clone());
+                }
+            }
+
+            if all_targets.is_empty() {
                 return ErrorDialog::spawn(
                     &self.window,
                     "Invalid capture",
@@ -288,10 +302,10 @@ impl DecryptGui {
                 );
             }
 
-            for (hs_bssid, hs_essid) in handshakes.iter() {
+            for (hs_bssid, hs_essid) in &all_targets {
                 if hs_bssid == &bssid {
                     self.target_model
-                        .insert_with_values(None, &[(0, &hs_bssid), (1, &hs_essid)]);
+                        .insert_with_values(None, &[(0, hs_bssid), (1, hs_essid)]);
                 }
             }
 

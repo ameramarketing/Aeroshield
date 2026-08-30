@@ -732,7 +732,7 @@ fn refresh_session_dashboard(app_data: &AppData) {
     drop(session);
 
     // Threat analysis & findings logic
-    for (bssid, ap) in &local_aps {
+    for (bssid, ap) in &*local_aps {
         let privacy = ap.privacy.to_uppercase();
         if privacy.contains("WEP") {
             log_finding(
