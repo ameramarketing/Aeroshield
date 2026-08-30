@@ -13,7 +13,7 @@ documentation = "https://github.com/ameramarketing/aeroshield/wiki"
 readme = "README.md"
 
 [workspace.dependencies]
-aeroshield-common = { path = "crates/common", version = "0.8.1" }
+aeroshield-common = { path = "crates/common", version = "1.0.0" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 regex = "1.13"
