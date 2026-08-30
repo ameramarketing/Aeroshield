@@ -1035,9 +1035,11 @@ fn start_app_refresh(app_data: Rc<AppData>) {
                     }
                 }
 
+                if session.status == aeroshield_common::types::SessionStatus::Active || !backend::get_aps().is_empty() {
+                    app_data.app_gui.report_but.set_sensitive(true);
+                }
                 if !backend::get_aps().is_empty() {
                     app_data.app_gui.export_but.set_sensitive(true);
-                    app_data.app_gui.report_but.set_sensitive(true);
                 }
 
                 // Push current signal level to graph
