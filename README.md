@@ -69,6 +69,13 @@ sudo cp crates/gui/icons/app_icon.png /usr/share/pixmaps/aeroshield.png
 
 ⚠️ **AeroShield is designed for security auditing, network penetration testing, and education.** Running attacks on WiFi networks you do not own or do not have explicit authorization to audit is illegal in almost all countries. The authors and contributors assume no liability for any damage or legal issues caused by the misuse of this software.
 
+## Acknowledgements
+
+AeroShield was originally derived from [Airgorah](https://github.com/martin-olivier/airgorah) by Martin Olivier and has since been substantially extended with additional functionality and engineering by Amjad Khan.
+
+Airgorah is licensed under the MIT License.
+Original project: [https://github.com/martin-olivier/airgorah](https://github.com/martin-olivier/airgorah)
+
 ## License
 
 This project is licensed under the [MIT License](LICENSE).
