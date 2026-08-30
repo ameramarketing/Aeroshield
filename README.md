@@ -16,13 +16,13 @@
 AeroShield offers a robust suite of tools to evaluate the security of wireless networks:
 
 - 📶 **Real-Time Traffic Sniffer**: Capture nearby WiFi traffic and automatically discover access points and client relationships.
-- ⚡ **PMKID Cracking (Client-less)**: Capture and extract PMKIDs from RSN Information Elements in EAPOL frames, allowing security audits of networks even when no clients are connected.
+- ⚡ **PMKID Cracking (Client-less)**: *(Fully Implemented)* Capture and extract PMKIDs from RSN Information Elements in EAPOL frames, allowing security audits of networks even when no clients are connected.
 - 💥 **Deauthentication Attacks**: Test target client connections by performing targeted deauthentication frame injections.
 - 🤝 **Handshake Acquisition**: Monitor and capture full WPA/WPA2 4-way cryptographic handshakes.
 - 🔑 **Offline Password Decryption**: Audit password strength using dictionary-based or brute-force attacks powered by `aircrack-ng`.
-- 🛡️ **Evil Twin Testing**: Launch captive portal access points to audit user vulnerability to phishing.
-- ⚙️ **WPS PIN Recovery**: Audit WPS-enabled networks for vulnerabilities using integrated PIN recovery engines.
-- 📊 **Visual Graphs & Reports**: Graph live signal strengths and generate detailed HTML reports of audit sessions.
+- 🛡️ **Evil Twin Testing**: *(Backend Implemented / GUI Integration Planned)* Launch captive portal access points to audit user vulnerability to phishing.
+- ⚙️ **WPS PIN Recovery**: *(Backend Implemented / GUI Integration Planned)* Audit WPS-enabled networks for vulnerabilities using integrated PIN recovery engines.
+- 📊 **Visual Graphs & Reports**: *(Fully Implemented)* Graph live signal strengths and generate detailed HTML/KML reports (including GPS coordinates if `gpsd` is active) of audit sessions.
 
 ## Architecture
 
