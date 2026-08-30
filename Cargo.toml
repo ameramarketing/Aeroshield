@@ -1,0 +1,25 @@
+[workspace]
+resolver = "3"
+members = ["crates/common", "crates/agent", "crates/gui"]
+
+[workspace.package]
+version = "1.0.0"
+edition = "2024"
+license = "MIT"
+authors = ["AeroShield Contributors"]
+homepage = "https://github.com/ameramarketing/aeroshield"
+repository = "https://github.com/ameramarketing/aeroshield"
+documentation = "https://github.com/ameramarketing/aeroshield/wiki"
+readme = "README.md"
+
+[workspace.dependencies]
+aeroshield-common = { path = "crates/common", version = "0.8.1" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+regex = "1.13"
+log = "0.4"
+env_logger = "0.11"
+thiserror = "2"
+nix = { version = "0.31", features = ["signal", "socket", "user", "fs"] }
+which = "8"
+lazy_static = "1"
