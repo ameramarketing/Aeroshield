@@ -489,6 +489,8 @@ impl AppGui {
         let panned_cli_aps = Paned::new(Orientation::Vertical);
         panned_cli_aps.set_wide_handle(true);
         panned_cli_aps.set_position(220);
+        panned_cli_aps.set_hexpand(true);
+        panned_cli_aps.set_vexpand(true);
         panned_cli_aps.set_start_child(Some(&aps_scroll));
         panned_cli_aps.set_end_child(Some(&cli_scroll));
 
@@ -514,6 +516,8 @@ impl AppGui {
         let main_paned = Paned::new(Orientation::Horizontal);
         main_paned.set_wide_handle(true);
         main_paned.set_position(740);
+        main_paned.set_hexpand(true);
+        main_paned.set_vexpand(true);
         main_paned.set_start_child(Some(&panned_cli_aps));
 
         // Construct sidebar stack and widgets
