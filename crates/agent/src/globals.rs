@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 //! Privileged state owned by the agent.
 //!
 //! This is the half of the old monolithic `globals.rs` that manipulates or holds

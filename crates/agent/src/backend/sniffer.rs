@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 //! Native 802.11 capture engine — the in-house replacement for `airodump-ng`.
 //!
 //! A capture thread opens a raw `AF_PACKET` socket on the monitor interface,

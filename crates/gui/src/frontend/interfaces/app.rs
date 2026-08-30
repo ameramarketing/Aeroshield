@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 use crate::backend;
 use crate::frontend::widgets::*;
 use crate::globals;

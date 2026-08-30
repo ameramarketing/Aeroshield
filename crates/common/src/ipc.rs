@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 //! The IPC contract between the GUI and the privileged agent.
 //!
 //! Wire format: a 4-byte big-endian length prefix followed by a JSON-encoded

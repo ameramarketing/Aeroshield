@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 //! IPC client
 
 use crate::globals::*;

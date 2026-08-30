@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 //! Native WPA handshake detection.
 //!
 //! Reads capture file(s) and reports which access points have a crackable WPA

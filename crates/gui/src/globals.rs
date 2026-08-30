@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 use aeroshield_common::types::{AP, AttackState, Client, Settings, AuditSession};
 
 use lazy_static::lazy_static;

@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 //! Unprivileged interface queries, run directly by the GUI.
 //!
 //! Listing interfaces (`iw dev`) and probing 5 GHz capability (sysfs + `iw phy`)

@@ -1,5 +1,7 @@
-//! Channels and channel-filter validation. Pure logic and data, shared so the
-//! GUI can validate input for UX and the agent can re-validate it.
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
+// Channels and channel-filter validation. Pure logic and data, shared so the
+// GUI can validate input for UX and the agent can re-validate it.
 
 /// 2.4 GHz channels scanned when the band is enabled without a channel filter.
 pub const CHANNELS_2_4: &[u32] = &[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13];

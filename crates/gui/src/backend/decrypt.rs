@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 use crate::types::*;
 use std::process::{Command, Stdio};
 

@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 use gtk4::prelude::*;
 use gtk4::*;
 

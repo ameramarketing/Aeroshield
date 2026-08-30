@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 //! Connection handling and request dispatch.
 //!
 //! The agent serves exactly one client — the GUI that launched it — over a Unix

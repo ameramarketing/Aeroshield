@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 //! Wire types shared across the IPC boundary.
 //!
 //! Everything here derives `Serialize`/`Deserialize` so it can travel over the

@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 use crate::globals::*;
 use aeroshield_common::deps;
 use aeroshield_common::types::Settings;

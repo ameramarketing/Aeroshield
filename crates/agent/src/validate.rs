@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 //! Validators for values that cross the privilege boundary and end up as
 //! arguments to root-run commands.
 

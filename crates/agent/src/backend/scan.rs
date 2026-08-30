@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;

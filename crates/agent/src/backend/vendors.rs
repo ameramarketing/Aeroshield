@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 //! Vendor (OUI) resolution.
 //!
 //! The agent produces the client records, so it also resolves each MAC to its

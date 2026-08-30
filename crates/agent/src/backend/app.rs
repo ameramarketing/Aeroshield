@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 use super::*;
 
 /// Stop the scan process, kill all the attack processes, disable monitor mode,

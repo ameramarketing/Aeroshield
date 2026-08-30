@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 //! `aeroshield-agent` — the privileged half of AeroShield.
 //!
 //! Launched by the unprivileged GUI (normally via `pkexec`), it runs as root,

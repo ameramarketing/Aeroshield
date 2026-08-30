@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 //! GUI-facing type definitions and re-exports.
 
 pub use aeroshield_common::types::{AP, AttackTarget, Settings};

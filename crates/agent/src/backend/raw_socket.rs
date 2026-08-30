@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 //! Shared raw `AF_PACKET` socket helpers for capturing and injecting 802.11
 //! frames on the monitor interface. The capture engine ([`super::sniffer`]) reads
 //! radiotap-prefixed frames off it; the deauth engine ([`super::deauth`]) injects

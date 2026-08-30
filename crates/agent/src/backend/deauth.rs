@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 //! Native deauthentication attacks.
 //!
 //! An injection thread forges 802.11 deauthentication (and, optionally, disassociation)

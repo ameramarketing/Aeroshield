@@ -1,3 +1,5 @@
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
 //! Minimal pcap writer for the native capture engine.
 //!
 //! The frames we pull off the monitor interface are radiotap-prefixed 802.11

@@ -1,5 +1,7 @@
-//! Catalog of the external command-line tools AeroShield relies on.
-//!
+// Copyright (c) 2023-2024 Martin Olivier <martin.olivier@live.fr>
+//
+// Catalog of the external command-line tools AeroShield relies on.
+//
 //! A single source of truth: each tool is declared once, tagged with which
 //! process runs it and whether it is required. Both the GUI and the agent derive
 //! their required set from this list and check it *in their own environment* —
